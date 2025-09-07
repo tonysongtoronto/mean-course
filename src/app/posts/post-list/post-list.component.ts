@@ -5,12 +5,14 @@ import { Post } from "../post.model";
 import { PostsService } from "../posts.service";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { CommonModule } from "@angular/common";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { RouterModule } from "@angular/router";
 
 @Component({
   selector: "app-post-list",
   templateUrl: "./post-list.component.html",
   styleUrls: ["./post-list.component.css"],
-    imports: [ MatExpansionModule,CommonModule],
+    imports: [ MatExpansionModule,CommonModule,RouterModule ],
 })
 export class PostListComponent implements OnInit, OnDestroy {
   // posts = [
@@ -25,14 +27,10 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   constructor(public postsService: PostsService) {
 
-
-
   }
 
   ngOnInit() {
-
      this.postsService.getPosts();
-
     this.posts$ = this.postsService.getPostUpdateListener();
 
   }
@@ -43,6 +41,6 @@ export class PostListComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
-    this.postsSub.unsubscribe();
+
   }
 }

@@ -1,90 +1,127 @@
-import { ChangeDetectorRef, Component } from "@angular/core";
-import { FormsModule, NgForm } from "@angular/forms";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
+import { FormGroup, FormControl, Validators, FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { ActivatedRoute, ParamMap } from "@angular/router";
 
 import { PostsService } from "../posts.service";
+import { Post } from "../post.model";
+import { mimeType } from "./mime-type.validator";
 import { MatCardModule } from "@angular/material/card";
 import { MatInputModule } from "@angular/material/input";
-import { CommonModule } from "@angular/common";
-import { ActivatedRoute, ParamMap, Router } from "@angular/router";
-import { Post } from "../post.model";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { CommonModule } from "@angular/common";
 
 @Component({
   selector: "app-post-create",
   templateUrl: "./post-create.component.html",
   styleUrls: ["./post-create.component.css"],
-  imports: [ MatCardModule,
+    imports: [ MatCardModule,
        MatInputModule,
         FormsModule,
+         ReactiveFormsModule,
      MatProgressSpinnerModule,
         CommonModule,],
 })
-export class PostCreateComponent {
-
+export class PostCreateComponent implements OnInit {
   enteredTitle = "";
   enteredContent = "";
   post: Post| null = null;;
   isLoading = false;
+  form!: FormGroup;
+  imagePreview: string | null = null;
   private mode = "create";
   private postId: string | null = null;
 
   constructor(
     public postsService: PostsService,
-     private cdr: ChangeDetectorRef,
     public route: ActivatedRoute,
-    private router: Router
+         private cdr: ChangeDetectorRef,
   ) {}
 
-ngOnInit() {
+  ngOnInit() {
+    this.form = new FormGroup({
+      title: new FormControl(null, {
+        validators: [Validators.required, Validators.minLength(3)]
+      }),
+      content: new FormControl(null,
+         { validators: [Validators.required] }),
+      image: new FormControl(null, {
+       //  validators: [Validators.required],
+         asyncValidators: [mimeType]
+      })
+    });
+    this.route.paramMap.subscribe((paramMap: ParamMap) => {
+      if (paramMap.has("postId")) {
+        this.mode = "edit";
+        this.postId = paramMap.get("postId");
+        this.isLoading = true;
+        this.postsService.getPost(this.postId!).subscribe(postData => {
+       //   this.isLoading = false;
+          this.post = {
+            id: postData._id,
+            title: postData.title,
+            content: postData.content,
+            imagePath: postData.imagePath ? postData.imagePath :''
+          };
+          this.form.setValue({
+            title: this.post.title,
+            content: this.post.content,
+           image:  this.post.imagePath
+          });
 
-  this.route.paramMap.subscribe((paramMap: ParamMap) => {
+          if (this.post.imagePath)
+          {
+          this.imagePreview=  this.post.imagePath;
+          }
 
-    if (paramMap.has("postId")) {
+        });
 
-      this.mode = "edit";
-      this.postId = paramMap.get("postId");
-      this.isLoading = true;
 
-      this.postsService.getPost(this.postId!).subscribe({
-        next: (postData ) => {
-          this.isLoading = false;
-          this.post = {id: postData._id, title: postData.title, content: postData.content};
-          this.cdr.detectChanges(); // 手动触发变更检测
-         console.log("post loaded:", this.post);
+      } else {
+        this.mode = "create";
+        this.postId = null;
+      }
+    });
 
-        },
-        error: (error) => {
-          this.isLoading = false; // 重要：错误时也要停止loading
-          console.error("Error loading post:", error);
-        }
-      });
-    } else {
-      this.mode = "create";
-      this.postId = null;
-      this.isLoading = false; // 创建模式时不需要loading
+      this.isLoading = false;
+
+      this.cdr.detectChanges(); // 手动触发变更检测
+  }
+
+  onImagePicked(event: Event) {
+
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
     }
-  });
-}
+    const file = input.files[0];
+    this.form.patchValue({ image: file });
+    this.form.get("image")?.updateValueAndValidity();
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreview = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
 
-
-  onSavePost(form: NgForm) {
-    if (form.invalid) {
+  onSavePost() {
+    if (this.form.invalid) {
       return;
     }
     this.isLoading = true;
     if (this.mode === "create") {
-      this.postsService.addPost(form.value.title, form.value.content);
-       this.router.navigate(["/"]);
+      this.postsService.addPost(
+        this.form.value.title,
+        this.form.value.content,
+        this.form.value.image
+      );
     } else {
       this.postsService.updatePost(
         this.postId!,
-        form.value.title,
-        form.value.content
+        this.form.value.title,
+        this.form.value.content,
+        this.form.value.image
       );
     }
-    form.resetForm();
+    this.form.reset();
   }
-
-
-
 }

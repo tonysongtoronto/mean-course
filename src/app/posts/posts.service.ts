@@ -13,14 +13,7 @@ export class PostsService {
 
    constructor(private http: HttpClient, private router: Router) {}
 
-    generateRandomString(length: number): string {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      let result = '';
-      for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    }
+
 
 getPosts() {
     this.http
@@ -32,7 +25,8 @@ getPosts() {
           return {
             title: post.title,
             content: post.content,
-            id: post._id
+            id: post._id,
+             imagePath: post.imagePath
           };
         });
       }))
@@ -47,17 +41,68 @@ getPosts() {
   }
 
 
-addPost(title: string, content: string) {
-    const post: Post = { id: null, title: title, content: content };
+
+  addPost(title: string, content: string, image: File) {
+    const postData = new FormData();
+    postData.append("title", title);
+    postData.append("content", content);
+
+    if(image){
+    postData.append("image", image, title);
+    }
+
     this.http
-      .post<{ message: string, postId:string }>(environment.apiUrl+"/api/posts/", post)
-      .subscribe(responseData => {
-    
-        post.id=responseData.postId
-        this.posts.push(post);
+      .post<{ message: string; post: Post }>(
+          environment.apiUrl+"/api/posts",
+        postData
+      ).subscribe({
+  next: (responseData) => {
+    const post: Post = {
+      id: responseData.post.id,
+      title: title,
+      content: content,
+      imagePath: responseData.post.imagePath ? responseData.post.imagePath : ''
+    };
+      this.posts.push(post);
         this.postsUpdated.next([...this.posts]);
-      });
+        this.router.navigate(["/"]);
+    // Handle successful response here
+    console.log('Post created successfully:', post);
+  },
+  error: (error) => {
+    console.error('Error creating post:', error);
+    // Handle error scenarios
+    if (error.status === 400) {
+      console.error('Bad request - check your data');
+    } else if (error.status === 401) {
+      console.error('Unauthorized - check authentication');
+    } else if (error.status === 500) {
+      console.error('Server error - try again later');
+    } else {
+      console.error('Unexpected error occurred');
+    }
+
+    // You can also show user-friendly error messages
+    // this.showErrorMessage('Failed to create post. Please try again.');
+  },
+  complete: () => {
+    console.log('Post creation request completed');
+    // Optional: Handle completion (called after success or error)
   }
+});
+      // .subscribe(responseData => {
+      //   const post: Post = {
+      //     id: responseData.post.id,
+      //     title: title,
+      //     content: content,
+      //     imagePath: responseData.post.imagePath ? responseData.post.imagePath :''
+      //   };
+      //   this.posts.push(post);
+      //   this.postsUpdated.next([...this.posts]);
+      //   this.router.navigate(["/"]);
+      // });
+  }
+
 
     deletePost(postId: string) {
     this.http.delete(environment.apiUrl+"/api/posts/" + postId)
@@ -69,35 +114,43 @@ addPost(title: string, content: string) {
   }
 
     getPost(id: string) {
-    return this.http.get<{ _id: string; title: string; content: string }>(
+    return this.http.get<{ _id: string; title: string; content: string, imagePath: string }>(
       environment.apiUrl +"/api/posts/" + id
     );
   }
 
- updatePost(id: string, title: string, content: string) {
-  const post: Post = { id: id, title: title, content: content };
-  this.http
-    .put(environment.apiUrl + "/api/posts/" + id, post)
-    .subscribe({
-      next: (response) => {
-        console.log("✅ updatePost success response:", response);
-
+  updatePost(id: string, title: string, content: string, image: File | string) {
+    let postData: Post | FormData;
+    if (typeof image === "object") {
+      postData = new FormData();
+      postData.append("id", id);
+      postData.append("title", title);
+      postData.append("content", content);
+      postData.append("image", image, title);
+    } else {
+      postData = {
+        id: id,
+        title: title,
+        content: content,
+        imagePath: image
+      };
+    }
+    this.http
+      .put(environment.apiUrl+"/api/posts/" + id, postData)
+      .subscribe(response => {
         const updatedPosts = [...this.posts];
-        const oldPostIndex = updatedPosts.findIndex(p => p.id === post.id);
+        const oldPostIndex = updatedPosts.findIndex(p => p.id === id);
+        const post: Post = {
+          id: id,
+          title: title,
+          content: content,
+          imagePath: ""
+        };
         updatedPosts[oldPostIndex] = post;
         this.posts = updatedPosts;
-
-        console.log("✅ posts after update:", this.posts);
         this.postsUpdated.next([...this.posts]);
         this.router.navigate(["/"]);
-      },
-      error: (err) => {
-        console.error("❌ updatePost error:", err);
-      },
-      complete: () => {
-        console.info("ℹ️ updatePost request completed");
-      }
-    });
-}
+      });
+  }
 
 }

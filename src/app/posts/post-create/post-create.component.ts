@@ -22,8 +22,8 @@ import { CommonModule } from "@angular/common";
         CommonModule,],
 })
 export class PostCreateComponent implements OnInit {
-  enteredTitle = "";
-  enteredContent = "";
+  // enteredTitle = "";
+  // enteredContent = "";
   post: Post| null = null;;
   isLoading = false;
   form!: FormGroup;
@@ -34,7 +34,7 @@ export class PostCreateComponent implements OnInit {
   constructor(
     public postsService: PostsService,
     public route: ActivatedRoute,
-         private cdr: ChangeDetectorRef,
+     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
@@ -84,7 +84,7 @@ export class PostCreateComponent implements OnInit {
 
       this.isLoading = false;
 
-      this.cdr.detectChanges(); // 手动触发变更检测
+      // this.cdr.detectChanges(); // 手动触发变更检测
   }
 
   onImagePicked(event: Event) {

@@ -90,17 +90,7 @@ getPosts() {
     // Optional: Handle completion (called after success or error)
   }
 });
-      // .subscribe(responseData => {
-      //   const post: Post = {
-      //     id: responseData.post.id,
-      //     title: title,
-      //     content: content,
-      //     imagePath: responseData.post.imagePath ? responseData.post.imagePath :''
-      //   };
-      //   this.posts.push(post);
-      //   this.postsUpdated.next([...this.posts]);
-      //   this.router.navigate(["/"]);
-      // });
+   
   }
 
 

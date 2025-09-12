@@ -1,8 +1,8 @@
-<ng-container *ngIf="(posts$ | async) as posts">
+<ng-container *ngIf="(postsObservable$ | async) as postsObservable">
 
-  @if (posts.length > 0) {
+  @if (postsObservable.posts.length >0) {
     <mat-accordion multi="true">
-      <mat-expansion-panel *ngFor="let post of posts">
+      <mat-expansion-panel *ngFor="let post of postsObservable.posts">
         <mat-expansion-panel-header>
           {{ post.title }}
         </mat-expansion-panel-header>
@@ -19,7 +19,14 @@
         </mat-action-row>
       </mat-expansion-panel>
     </mat-accordion>
-  } @else {
+    <mat-paginator [length]="postsObservable.postCount"
+    [pageSize]="postsPerPage"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onChangedPage($event)"
+  *ngIf="postsObservable.posts.length > 0"></mat-paginator>
+  }
+
+  @else {
     <p class="info-text mat-body-1">No posts added yet!</p>
   }
 </ng-container>

@@ -9,30 +9,40 @@ import { Router } from "@angular/router";
 @Injectable({ providedIn: "root" })
 export class PostsService {
   private posts: Post[] = [];
-  private postsUpdated = new Subject<Post[]>();
+  private postsUpdated = new Subject<{ posts: Post[]; postCount: number }>();
 
    constructor(private http: HttpClient, private router: Router) {}
 
 
-
-getPosts() {
+ getPosts(postsPerPage: number, currentPage: number) {
+  
+     const queryParams = `?pagesize=${postsPerPage}&page=${currentPage}`;
     this.http
-      .get<{ message: string; posts: any[] }>(
-        environment.apiUrl+"/api/posts"
+      .get<{ message: string; posts: any[]; maxPosts: number }>(
+          "http://localhost:3000/api/posts" + queryParams
       )
-      .pipe(map((postData) => {
-        return postData.posts.map(post => {
+       .pipe(
+        map(postData => {
           return {
-            title: post.title,
-            content: post.content,
-            id: post._id,
-             imagePath: post.imagePath
+            posts: postData.posts.map(post => {
+              return {
+                title: post.title,
+                content: post.content,
+                id: post._id,
+                imagePath: post.imagePath
+              };
+            }),
+            maxPosts: postData.maxPosts
           };
-        });
-      }))
+        })
+      )
       .subscribe(transformedPosts => {
-        this.posts = transformedPosts;
-        this.postsUpdated.next([...this.posts]);
+        this.posts = transformedPosts.posts;
+        this.postsUpdated.next({
+            posts: [...this.posts],
+          postCount: transformedPosts.maxPosts
+
+        });
       });
   }
 
@@ -64,7 +74,12 @@ getPosts() {
       imagePath: responseData.post.imagePath ? responseData.post.imagePath : ''
     };
       this.posts.push(post);
-        this.postsUpdated.next([...this.posts]);
+
+       this.postsUpdated.next({
+            posts: [...this.posts],
+          postCount: this.posts.length
+
+        });
         this.router.navigate(["/"]);
     // Handle successful response here
     console.log('Post created successfully:', post);
@@ -82,25 +97,19 @@ getPosts() {
       console.error('Unexpected error occurred');
     }
 
-    // You can also show user-friendly error messages
-    // this.showErrorMessage('Failed to create post. Please try again.');
   },
   complete: () => {
     console.log('Post creation request completed');
-    // Optional: Handle completion (called after success or error)
+
   }
 });
-   
+
   }
 
 
-    deletePost(postId: string) {
-    this.http.delete(environment.apiUrl+"/api/posts/" + postId)
-      .subscribe(() => {
-        const updatedPosts = this.posts.filter(post => post.id !== postId);
-        this.posts = updatedPosts;
-        this.postsUpdated.next([...this.posts]);
-      });
+  deletePost(postId: string) {
+    return this.http
+      .delete("http://localhost:3000/api/posts/" + postId);
   }
 
     getPost(id: string) {
@@ -138,7 +147,11 @@ getPosts() {
         };
         updatedPosts[oldPostIndex] = post;
         this.posts = updatedPosts;
-        this.postsUpdated.next([...this.posts]);
+         this.postsUpdated.next({
+            posts: [...this.posts],
+          postCount: this.posts.length
+
+        });
         this.router.navigate(["/"]);
       });
   }

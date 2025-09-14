@@ -8,6 +8,9 @@ import { CommonModule } from "@angular/common";
 
 import { RouterModule } from "@angular/router";
 import { MatPaginatorModule, PageEvent } from "@angular/material/paginator";
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { MatButtonModule } from "@angular/material/button";
+import { AuthService } from "../../auth/auth.service";
 
 @Component({
   selector: "app-post-list",
@@ -16,7 +19,10 @@ import { MatPaginatorModule, PageEvent } from "@angular/material/paginator";
     imports: [ MatExpansionModule,
       CommonModule,
       RouterModule ,
-      MatPaginatorModule],
+      MatPaginatorModule,
+      MatButtonModule
+
+   ],
 })
 export class PostListComponent implements OnInit, OnDestroy {
 
@@ -27,7 +33,18 @@ export class PostListComponent implements OnInit, OnDestroy {
   pageSizeOptions = [1, 2, 5, 10];
   private postsSub!: Subscription;
 
-  constructor(public postsService: PostsService) {
+    userIsAuthenticated = false;
+  private authListenerSubs!: Subscription;
+
+  constructor(public postsService: PostsService,private authService: AuthService) {
+
+        this.authService.autoAuthUser();
+    this.userIsAuthenticated = this.authService.getIsAuth();
+    this.authListenerSubs = this.authService
+      .getAuthStatusListener()
+      .subscribe(isAuthenticated => {
+        this.userIsAuthenticated = isAuthenticated;
+      });
 
   }
 

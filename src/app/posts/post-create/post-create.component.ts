@@ -54,6 +54,7 @@ export class PostCreateComponent implements OnInit {
         this.mode = "edit";
         this.postId = paramMap.get("postId");
         this.isLoading = true;
+    
         this.postsService.getPost(this.postId!).subscribe(postData => {
        //   this.isLoading = false;
           this.post = {
@@ -88,6 +89,8 @@ export class PostCreateComponent implements OnInit {
   }
 
   onImagePicked(event: Event) {
+
+
 
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) {

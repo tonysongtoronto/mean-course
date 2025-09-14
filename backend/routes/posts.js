@@ -4,6 +4,8 @@ const express = require("express");
 const Post = require("../models/post");
 const { getPostById, deleteFile, extractFilename } = require('../utils/postUtils');
 const { upload } = require('../config/multerConfig');
+const checkAuth = require("../middleware/check-auth");
+const { now } = require("mongoose");
 
 
 const router = express.Router();
@@ -12,6 +14,7 @@ const router = express.Router();
 
 router.post(
   "",
+  checkAuth,
  upload.single("image"),
   (req, res, next) => {
     const url = req.protocol + "://" + req.get("host");
@@ -36,6 +39,7 @@ router.post(
 
 router.put(
   "/:id",
+    checkAuth,
  upload.single("image"),
   async (req, res, next) => {
     try {
@@ -161,6 +165,8 @@ router.get("", async (req, res, next) => {
 
 router.get("/:id", (req, res, next) => {
   Post.findById(req.params.id).then(post => {
+
+   
     if (post) {
       res.status(200).json(post);
     } else {

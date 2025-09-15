@@ -5,7 +5,7 @@ const Post = require("../models/post");
 const { getPostById, deleteFile, extractFilename } = require('../utils/postUtils');
 const { upload } = require('../config/multerConfig');
 const checkAuth = require("../middleware/check-auth");
-const { now } = require("mongoose");
+
 
 
 const router = express.Router();
@@ -15,13 +15,15 @@ const router = express.Router();
 router.post(
   "",
   checkAuth,
- upload.single("image"),
+  upload.single("image"),
   (req, res, next) => {
     const url = req.protocol + "://" + req.get("host");
     const post = new Post({
       title: req.body.title,
       content: req.body.content,
-      imagePath: (req.file && req.file?.filename) ? url + "/images/" + req.file?.filename :''
+      imagePath: (req.file && req.file?.filename) ? url + "/images/" + req.file?.filename : '',
+      creator: req.userData.userId
+
     });
     post.save().then(createdPost => {
       res.status(201).json({
@@ -39,8 +41,8 @@ router.post(
 
 router.put(
   "/:id",
-    checkAuth,
- upload.single("image"),
+  checkAuth,
+  upload.single("image"),
   async (req, res, next) => {
     try {
       const postId = req.params.id;
@@ -69,13 +71,17 @@ router.put(
         _id: req.body.id,
         title: req.body.title,
         content: req.body.content,
-        imagePath: imagePath
+        imagePath: imagePath,
+        creator: req.userData.userId
       });
 
       console.log(post);
 
       // 3. 更新数据库记录
-      const result = await Post.updateOne({ _id: postId }, post);
+      const result = await Post.updateOne(
+        { _id: req.params.id, creator: req.userData.userId },
+        post
+      );
 
       if (result.matchedCount === 0) {
         return res.status(404).json({
@@ -96,11 +102,19 @@ router.put(
         }
       }
 
-      console.log(`Post ${postId} updated successfully`);
-      res.status(200).json({
-        success: true,
-        message: "Update successful!"
-      });
+      if (result.modifiedCount > 0) {
+
+        res.status(200).json({
+          success: true,
+          message: "Update successful!"
+        });
+
+      } else {
+        res.status(401).json({ message: "Not authorized!" });
+      }
+
+
+
 
     } catch (error) {
       console.error('Update post error:', error);
@@ -165,8 +179,6 @@ router.get("", async (req, res, next) => {
 
 router.get("/:id", (req, res, next) => {
   Post.findById(req.params.id).then(post => {
-
-   
     if (post) {
       res.status(200).json(post);
     } else {
@@ -180,7 +192,7 @@ router.get("/:id", (req, res, next) => {
 
 
 // 删除Post的路由处理
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id",  checkAuth, async (req, res, next) => {
   try {
     const postId = req.params.id;
 
@@ -188,7 +200,7 @@ router.delete("/:id", async (req, res, next) => {
     const post = await getPostById(postId);
 
     // 2. 删除数据库中的记录
-    const result = await Post.deleteOne({ _id: postId });
+    const result = await  Post.deleteOne({ _id: req.params.id, creator: req.userData.userId });
 
     if (result.deletedCount === 0) {
       return res.status(404).json({
@@ -203,11 +215,17 @@ router.delete("/:id", async (req, res, next) => {
       await deleteFile(filename);
     }
 
-    console.log(`Post ${postId} deleted successfully`);
+         if (result.deletedCount > 0) {
+         console.log(`Post ${postId} deleted successfully`);
     res.status(200).json({
       success: true,
       message: "Post deleted successfully!"
     });
+      } else {
+        res.status(401).json({ message: "Not authorized!" });
+      }
+
+
 
   } catch (error) {
     console.error('Delete post error:', error);

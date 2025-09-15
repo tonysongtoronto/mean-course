@@ -29,7 +29,8 @@ export class PostsService {
                 title: post.title,
                 content: post.content,
                 id: post._id,
-                imagePath: post.imagePath
+                imagePath: post.imagePath,
+                 creator: post.creator
               };
             }),
             maxPosts: postData.maxPosts
@@ -67,22 +68,10 @@ export class PostsService {
         postData
       ).subscribe({
   next: (responseData) => {
-    const post: Post = {
-      id: responseData.post.id,
-      title: title,
-      content: content,
-      imagePath: responseData.post.imagePath ? responseData.post.imagePath : ''
-    };
-      this.posts.push(post);
 
-       this.postsUpdated.next({
-            posts: [...this.posts],
-          postCount: this.posts.length
-
-        });
         this.router.navigate(["/"]);
     // Handle successful response here
-    console.log('Post created successfully:', post);
+    console.log('Post created successfully:', responseData.post);
   },
   error: (error) => {
     console.error('Error creating post:', error);
@@ -113,7 +102,9 @@ export class PostsService {
   }
 
     getPost(id: string) {
-    return this.http.get<{ _id: string; title: string; content: string, imagePath: string }>(
+    return this.http.get<{ _id: string; title: string;
+      content: string, imagePath: string,
+      creator: string }>(
       environment.apiUrl +"/api/posts/" + id
     );
   }
@@ -131,29 +122,25 @@ export class PostsService {
         id: id,
         title: title,
         content: content,
-        imagePath: image
+        imagePath: image,
+        creator: ''
       };
     }
     this.http
       .put(environment.apiUrl+"/api/posts/" + id, postData)
-      .subscribe(response => {
-        const updatedPosts = [...this.posts];
-        const oldPostIndex = updatedPosts.findIndex(p => p.id === id);
-        const post: Post = {
-          id: id,
-          title: title,
-          content: content,
-          imagePath: ""
-        };
-        updatedPosts[oldPostIndex] = post;
-        this.posts = updatedPosts;
-         this.postsUpdated.next({
-            posts: [...this.posts],
-          postCount: this.posts.length
+  .subscribe({
+    next: response => {
+      // Success callback
+      this.router.navigate(["/"]);
+    },
+    error: err => {
+      // Error callback
+      console.error("Error updating post:", err);
 
-        });
-        this.router.navigate(["/"]);
-      });
+       this.router.navigate(["/"]);
+      alert("Failed to update the post. Please try again.");
+    }
+  });
   }
 
 }

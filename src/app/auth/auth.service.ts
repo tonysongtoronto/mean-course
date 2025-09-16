@@ -39,7 +39,14 @@ export class AuthService {
       .subscribe(response => {
         console.log(response);
         this.router.navigate(["/login"]);
-      });
+      },
+      error => {
+        this.authStatusListener.next(false);
+      }
+
+
+
+    );
   }
 
   login(email: string, password: string) {
@@ -60,12 +67,19 @@ export class AuthService {
           this.authStatusListener.next(true);
           const now = new Date();
           const expirationDate = new Date(now.getTime() + expiresInDuration * 1000);
-
+          console.log("this is login ");
 
           this.saveAuthData(token, expirationDate, this.userId);
           this.router.navigate(["/"]);
         }
-      });
+      },
+     error => {
+
+        console.log("this is login faile ");
+        this.authStatusListener.next(false);
+      }
+
+    );
   }
 
   autoAuthUser() {

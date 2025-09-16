@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
 import { AuthService } from "../auth.service";
 import { MatCardModule } from "@angular/material/card";
@@ -7,6 +7,7 @@ import { MatFormFieldModule } from "@angular/material/form-field";
 import { CommonModule } from "@angular/common";
 import { MatButtonModule } from "@angular/material/button";
 import { MatInputModule } from "@angular/material/input";
+import { Subscription } from "rxjs";
 
 @Component({
   templateUrl: "./login.component.html",
@@ -21,9 +22,27 @@ import { MatInputModule } from "@angular/material/input";
     MatProgressSpinnerModule,
   ]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit, OnDestroy {
   isLoading = false;
-  constructor(public authService: AuthService) { }
+  private authStatusSub!: Subscription;
+  
+  constructor(public authService: AuthService,
+     private cdr: ChangeDetectorRef) { }
+
+  ngOnInit() {
+    this.authStatusSub = this.authService.getAuthStatusListener().subscribe(
+      authStatus => {
+
+
+        if (authStatus === false) {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+
+
+        }
+      }
+    );
+  }
 
   onLogin(form: NgForm) {
     if (form.invalid) {
@@ -31,5 +50,9 @@ export class LoginComponent {
     }
     this.isLoading = true;
     this.authService.login(form.value.email, form.value.password);
+  }
+
+  ngOnDestroy() {
+    this.authStatusSub.unsubscribe();
   }
 }

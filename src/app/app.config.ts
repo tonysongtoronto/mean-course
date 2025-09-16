@@ -4,11 +4,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth-interceptor';
+import { errorInterceptor } from './error-interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
       provideHttpClient(
-      withInterceptors([authInterceptor]) // 添加拦截器
+      withInterceptors([authInterceptor,errorInterceptor]) // 添加拦截器
     ),
 
     provideBrowserGlobalErrorListeners(),

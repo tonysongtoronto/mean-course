@@ -20,7 +20,7 @@ import { MAT_DIALOG_DATA, MatDialogModule } from "@angular/material/dialog";
 export class ErrorComponent {
   // data: { message: string };
   // private errorSub: Subscription;
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { message: string })
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { message: string  } |null)
 
   {}
   // constructor(private errorService: ErrorService) {}

@@ -8,13 +8,18 @@ const app = express();
 
 mongoose
   .connect(
-    "mongodb+srv://junfengs_db_user:xkJWeEOiTUVwQy3P@cluster0.geaoipt.mongodb.net/node-angular?retryWrites=true&w=majority&appName=Cluster0"
+    "mongodb+srv://junfengs_db_user:"+
+      process.env.MONGO_ATLAS_PW +"@cluster0.geaoipt.mongodb.net/node-angular?retryWrites=true&w=majority&appName=Cluster0"
   )
   .then(() => {
     console.log("Connected to database!");
+    console.log("process.env.MONGO_ATLAS_PW");
+    console.log(process.env.MONGO_ATLAS_PW);
   })
   .catch(() => {
     console.log("Connection failed!");
+
+
   });
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
